@@ -1,0 +1,2 @@
+echo hello my creul operating system world | cut -c16-32
+cat -A list_head.h | wc -l
