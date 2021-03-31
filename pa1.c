@@ -20,6 +20,7 @@
 #include <errno.h>
 
 #include <string.h>
+#include <sys/wait.h>
 
 #include "types.h"
 #include "list_head.h"
@@ -40,7 +41,28 @@
  */
 static int run_command(int nr_tokens, char *tokens[])
 {
+	// Internal
 	if (strcmp(tokens[0], "exit") == 0) return 0;
+	if (strcmp(tokens[0], "cd") == 0) {
+		return -1;
+	}
+
+	// External
+
+	pid_t pid;
+	pid = fork();
+	/*  */ if (pid > 0)
+	{
+		waitpid(-1, 0, 0);
+		return 1;
+	} else if (pid == 0)
+	{
+		if (execvp(tokens[0], tokens) < 0)
+		{
+			fprintf(stderr, "Unable to execute %s\n", tokens[0]);
+			exit(EXIT_FAILURE);
+		}
+	}
 
 	fprintf(stderr, "Unable to execute %s\n", tokens[0]);
 	return -EINVAL;
