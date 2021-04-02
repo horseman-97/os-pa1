@@ -26,7 +26,11 @@
 #include "list_head.h"
 #include "parser.h"
 
-
+struct entry{
+	struct list_head list;
+	char *pcommand;
+};
+struct list_head history;
 /***********************************************************************
  * run_command()
  *
@@ -44,23 +48,44 @@ static int run_command(int nr_tokens, char *tokens[])
 	// Internal
 	if (strcmp(tokens[0], "exit") == 0) return 0;
 	//cd
-
 	if (strcmp(tokens[0], "cd") == 0) {
 		//home dir
-		/*  */ if (tokens[1] == NULL || strcmp(tokens[1], "~"))
+		/*  */ if (tokens[1] == NULL)
 		{
 			chdir(getenv("HOME"));
-			return 1;
-		} else if (chdir(tokens[1]) != 0)
-		{
+		}else if(strcmp(tokens[1], "~")==0){
+			chdir(getenv("HOME"));
+
+		} else{
 			chdir(tokens[1]);
-			return 1;
 		}
-
+		return 1;
 	}
+	//history
+	if (strcmp(tokens[0], "history") == 0)
+	{
+		struct entry *chistory;
+		int num = 0;
+		list_for_each_entry_reverse(chistory, &history, list)
+		{
+			fprintf(stderr, "%2d: %s", num++, chistory->pcommand);
+		}
+		return 1;
+	}
+	//!history
+	/*
+	if(strcmp(tokens[0], "!") == 0)
+	{
+		if()
+		{
 
+		} else if(strcmp(tokens[1] == NULL))
+		{
+
+		}
+	}
+	*/
 	// External
-
 	pid_t pid;
 	pid = fork();
 	/*  */ if (pid > 0)
@@ -99,6 +124,15 @@ LIST_HEAD(history);
  */
 static void append_history(char * const command)
 {
+	struct entry *ehistory;
+
+	ehistory = (struct entry *)malloc(sizeof(struct entry));
+	ehistory->pcommand = (char *)malloc(strlen(command));
+
+	strcpy(ehistory->pcommand, command);
+
+	INIT_LIST_HEAD(&ehistory->list);
+	list_add(&ehistory->list, &history);
 
 }
 
