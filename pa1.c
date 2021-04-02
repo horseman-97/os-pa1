@@ -43,8 +43,20 @@ static int run_command(int nr_tokens, char *tokens[])
 {
 	// Internal
 	if (strcmp(tokens[0], "exit") == 0) return 0;
+	//cd
+
 	if (strcmp(tokens[0], "cd") == 0) {
-		return -1;
+		//home dir
+		/*  */ if (tokens[1] == NULL || strcmp(tokens[1], "~"))
+		{
+			chdir(getenv("HOME"));
+			return 1;
+		} else if (chdir(tokens[1]) != 0)
+		{
+			chdir(tokens[1]);
+			return 1;
+		}
+
 	}
 
 	// External
