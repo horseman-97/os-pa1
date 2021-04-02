@@ -31,6 +31,7 @@ struct entry{
 	char *pcommand;
 };
 struct list_head history;
+static int __process_command(char * command);
 /***********************************************************************
  * run_command()
  *
@@ -73,18 +74,27 @@ static int run_command(int nr_tokens, char *tokens[])
 		return 1;
 	}
 	//!history
-	/*
 	if(strcmp(tokens[0], "!") == 0)
 	{
-		if()
+		struct entry *chistory;
+		int num = 0;
+		list_for_each_entry_reverse(chistory, &history, list)
 		{
-
-		} else if(strcmp(tokens[1] == NULL))
-		{
-
+			if(num == atoi(tokens[1]))
+			{
+				break;
+			}
+			else
+			{
+				num++;
+			}
 		}
+		char *temp;
+		temp = (char *)malloc(sizeof(strlen(chistory->pcommand)));
+		strcpy(temp, chistory->pcommand);
+		__process_command(temp);
+		return 1;
 	}
-	*/
 	// External
 	pid_t pid;
 	pid = fork();
