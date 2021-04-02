@@ -90,7 +90,7 @@ static int run_command(int nr_tokens, char *tokens[])
 			}
 		}
 		char *temp;
-		temp = (char *)malloc(sizeof(strlen(chistory->pcommand)));
+		temp = (char *)malloc(strlen(chistory->pcommand));
 		strcpy(temp, chistory->pcommand);
 		__process_command(temp);
 		return 1;
@@ -137,7 +137,7 @@ static void append_history(char * const command)
 	struct entry *ehistory;
 
 	ehistory = (struct entry *)malloc(sizeof(struct entry));
-	ehistory->pcommand = (char *)malloc(strlen(command));
+	ehistory->pcommand = (char *)malloc(strlen(command)+1);
 
 	strcpy(ehistory->pcommand, command);
 
