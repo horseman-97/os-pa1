@@ -46,71 +46,150 @@ static int __process_command(char * command);
  */
 static int run_command(int nr_tokens, char *tokens[])
 {
-	// Internal
-	if (strcmp(tokens[0], "exit") == 0) return 0;
-	//cd
-	if (strcmp(tokens[0], "cd") == 0) {
-		//home dir
-		/*  */ if (tokens[1] == NULL)
+	// Pipe
+	int len = nr_tokens;
+	char *firstcommand[len*2];
+	char *secondcommand[len*2];
+	//int status;
+	int j = 0;
+	int i = 0;
+	int pipesymbol = 0;
+	for(i = 0; tokens[i]!=NULL; ++i)
+	{
+		if(strcmp(tokens[i],"|") == 0)
 		{
-			chdir(getenv("HOME"));
-		}else if(strcmp(tokens[1], "~")==0){
-			chdir(getenv("HOME"));
+			pipesymbol = true;
+			firstcommand[i] = NULL;
+			break;
+		}
+		firstcommand[i] = tokens[i];
+	}
+	i+=1;
+	for(j = 0; tokens[i]!=NULL; ++j)
+	{
+		secondcommand[j] = tokens[i];
+		i++;
+	}
+	pid_t cpid;
+	pid_t cpid2;
+	int fd[2];
+	if (pipesymbol == 1)
+	{
+		pipe(fd);
+		cpid = fork();
+		/*  */ if (cpid < 0)
+		{
+			fprintf(stderr, "Cannot initialize Pipe\n");
+			exit(EXIT_FAILURE);
+		} else if (cpid == 0) /* Child1 write command result*/
+		{
+			close(fd[0]); /* Close unused read end */
+			dup2(fd[1], 1); /* Write at the pipe's write_end */
+			close(fd[1]); /* Reader see EOF */
 
-		} else{
-			chdir(tokens[1]);
-		}
-		return 1;
-	}
-	//history
-	if (strcmp(tokens[0], "history") == 0)
-	{
-		struct entry *chistory;
-		int num = 0;
-		list_for_each_entry_reverse(chistory, &history, list)
-		{
-			fprintf(stderr, "%2d: %s", num++, chistory->pcommand);
-		}
-		return 1;
-	}
-	//!history
-	if(strcmp(tokens[0], "!") == 0)
-	{
-		struct entry *chistory;
-		int num = 0;
-		list_for_each_entry_reverse(chistory, &history, list)
-		{
-			if(num == atoi(tokens[1]))
+			if (execvp(firstcommand[0], firstcommand) < 0)
 			{
-				break;
+				fprintf(stderr, "Unable to execute %s\n", firstcommand[0]);
+				exit(EXIT_FAILURE);
+			}
+		} else
+		{
+			wait(NULL);
+			cpid2 = fork();
+			/*  */ if (cpid2 < 0)
+			{
+				fprintf(stderr, "fork fail\n");
+				exit(EXIT_FAILURE);
+			} else if (cpid2 == 0) {/* Child2 read command result*/
+
+				close(fd[1]);				/* Close unused write end*/
+				dup2(fd[0], 0); /* Read at the pipe's read_end */
+				close(fd[0]);				/* Writer see EOF */
+				if (execvp(secondcommand[0], secondcommand) < 0)
+				{
+					fprintf(stderr, "Unable to execute %s\n", firstcommand[0]);
+					exit(EXIT_FAILURE);
+				}
 			}
 			else
 			{
-				num++;
+				close(fd[1]);
+				wait(NULL);
 			}
 		}
-		char *temp;
-		temp = (char *)malloc(strlen(chistory->pcommand));
-		strcpy(temp, chistory->pcommand);
-		__process_command(temp);
 		return 1;
 	}
-	// External
-	pid_t pid;
-	pid = fork();
-	/*  */ if (pid > 0)
+	// Internal
+	if (strcmp(tokens[0], "exit") == 0)
 	{
-		waitpid(-1, 0, 0);
-		return 1;
-	} else if (pid == 0)
+		return 0;
+	}
+	if (pipesymbol==0)
 	{
-		if (execvp(tokens[0], tokens) < 0)
+		// cd
+		if (strcmp(tokens[0], "cd") == 0)
 		{
-			fprintf(stderr, "Unable to execute %s\n", tokens[0]);
-			exit(EXIT_FAILURE);
+			// home dir
+			/*  */ if (tokens[1] == NULL)
+			{
+				chdir(getenv("HOME"));
+			} else if (strcmp(tokens[1], "~") == 0)
+			{
+				chdir(getenv("HOME"));
+			} else
+			{
+				chdir(tokens[1]);
+			}
+			return 1;
+		}
+		//history
+		if (strcmp(tokens[0], "history") == 0)
+		{
+			struct entry *chistory;
+			int num = 0;
+			list_for_each_entry_reverse(chistory, &history, list)
+			{
+				fprintf(stderr, "%2d: %s", num++, chistory->pcommand);
+			}
+			return 1;
+		}
+		// !history
+		if (strcmp(tokens[0], "!") == 0)
+		{
+			struct entry *chistory;
+			int num = 0;
+			list_for_each_entry_reverse(chistory, &history, list)
+			{
+				if (num == atoi(tokens[1]))
+				{
+					break;
+				} else
+				{
+					num++;
+				}
+			}
+			char *temp;
+			temp = (char *)malloc(strlen(chistory->pcommand));
+			strcpy(temp, chistory->pcommand);
+			__process_command(temp);
+			return 1;
+		}
+		// External
+		pid_t pid;
+		pid = fork();
+		/*  */ if (pid > 0)
+		{
+			waitpid(-1, 0, 0);
+			return 1;
+		} else if (pid == 0)
+		{
+			if (execvp(tokens[0], tokens) < 0)
+			{
+				fprintf(stderr, "Unable to execute %s\n", tokens[0]);
+				exit(EXIT_FAILURE);
+			}
 		}
 	}
-
 	fprintf(stderr, "Unable to execute %s\n", tokens[0]);
 	return -EINVAL;
 }
