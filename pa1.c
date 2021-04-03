@@ -50,7 +50,7 @@ static int run_command(int nr_tokens, char *tokens[])
 	int len = nr_tokens;
 	char *firstcommand[len*2];
 	char *secondcommand[len*2];
-	//int status;
+	int status = 0;
 	int j = 0;
 	int i = 0;
 	int pipesymbol = 0;
@@ -94,7 +94,7 @@ static int run_command(int nr_tokens, char *tokens[])
 			}
 		} else
 		{
-			wait(NULL);
+			wait(&status);
 			cpid2 = fork();
 			/*  */ if (cpid2 < 0)
 			{
@@ -114,7 +114,7 @@ static int run_command(int nr_tokens, char *tokens[])
 			else
 			{
 				close(fd[1]);
-				wait(NULL);
+				wait(&status);
 			}
 		}
 		return 1;
