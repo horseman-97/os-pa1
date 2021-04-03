@@ -105,11 +105,8 @@ static int run_command(int nr_tokens, char *tokens[])
 				close(fd[1]);				/* Close unused write end*/
 				dup2(fd[0], 0); /* Read at the pipe's read_end */
 				close(fd[0]);				/* Writer see EOF */
-				if (execvp(secondcommand[0], secondcommand) < 0)
-				{
-					fprintf(stderr, "Unable to execute %s\n", firstcommand[0]);
-					exit(EXIT_FAILURE);
-				}
+				execvp(secondcommand[0], secondcommand);
+				exit(0);
 			}
 			else
 			{
